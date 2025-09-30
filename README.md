@@ -35,6 +35,7 @@ docTopic.py
 因為 gemini 對於圖片的描述是口語化的，存在不重要的介係詞等內容，故需先進行內容的整理
 
 { 
+
     在 remove_stopwords 中清除英語停用詞；後續 build_phrases 以 gensim Phrases 訓練雙詞與三詞片語，捕捉常見詞組並轉成 Phraser。
     
     apply_phrases 將片語模型套回每筆 token，把常見連續詞合併成單一 token（例如 bigram trigram）。
@@ -46,3 +47,15 @@ docTopic.py
     load_and_clean 串起上述流程：讀取 CSV Description 欄位→tokenize→去停用詞→訓練並套用片語→詞形還原與詞性篩選→文件頻率過濾，最後回傳乾淨 token。
     
 }
+
+
+
+## train_bertopic.py
+使用預處理過的資料 fine tune bertopic
+
+輸出 csv ，紀錄每個 topic 的關鍵字
+
+
+
+## docTopic.py
+讓已經 fine tune 後的 model 判斷每篇文章的 topic 占比

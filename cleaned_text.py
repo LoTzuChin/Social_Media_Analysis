@@ -55,15 +55,18 @@ ALLOWED_POS = {"NOUN", "ADJ", "ADV"}
 def log_step(message: str) -> None:
     print("[INFO] " + str(message), flush=True)
 
+# 將原始描述轉成標準化的 tokens，便於後續語言模型處理。
 def basic_tokenize(text: str) -> List[str]:
     if not isinstance(text, str):
         text = "" if text is None else str(text)
     tokens = simple_preprocess(text, deacc=False, min_len=3, max_len=30)
     return tokens
 
+# 移除英文停用詞以減少常見且無資訊量的詞彙。
 def remove_stopwords(tokens: List[str]) -> List[str]:
     return [t for t in tokens if t not in EN_STOPWORDS]
 
+# 訓練雙詞與三詞片語模型，用來捕捉常一起出現的詞組。
 def build_phrases(list_of_tokens: List[List[str]]) -> Phraser:
     log_step("Training bigram phrase model")
     bigram = Phrases(list_of_tokens, min_count=5, threshold=10)
@@ -74,9 +77,11 @@ def build_phrases(list_of_tokens: List[List[str]]) -> Phraser:
     log_step("Phrase models ready")
     return trigram_phraser
 
+# 將已學到的片語模型套用到 tokens，合併常見詞組。
 def apply_phrases(tokens: List[str], phraser: Phraser) -> List[str]:
     return list(phraser[tokens])
 
+# 使用 spaCy 詞形還原並僅保留名詞／形容詞／副詞等有資訊量詞性。
 def lemmatize_and_pos_filter(tokens: List[str]) -> List[str]:
     out = []
     for tok in tokens:
@@ -97,6 +102,7 @@ def lemmatize_and_pos_filter(tokens: List[str]) -> List[str]:
                     out.append(t.lemma_.lower())
     return out
 
+# 以文件頻率篩選 tokens，移除過稀或過常的詞。
 def frequency_filter_docs(docs_tokens: List[List[str]], min_df=0.015, max_df=0.80) -> List[List[str]]:
     docs_text = [" ".join(toks) for toks in docs_tokens]
     if len(docs_text) == 0:
@@ -115,6 +121,7 @@ def frequency_filter_docs(docs_tokens: List[List[str]], min_df=0.015, max_df=0.8
     filtered = [[t for t in toks if t in vocab] for toks in docs_tokens]
     return filtered
 
+# 串接整體清理流程，從 CSV 讀取資料並完成前處理。
 def load_and_clean(csv_path: str, text_col: str = "Description") -> List[List[str]]:
     log_step(f"Reading CSV: {csv_path}")
     df = pd.read_csv(csv_path)
@@ -144,6 +151,7 @@ def load_and_clean(csv_path: str, text_col: str = "Description") -> List[List[st
     log_step("Preprocessing complete")
     return tokens_list
 
+# 腳本進入點：預設讀取 CSV 並輸出清理後結果。
 if __name__ == "__main__":
     CSV_PATH = "image_descriptions_all.csv"
     log_step(f"Input CSV path: {CSV_PATH}")

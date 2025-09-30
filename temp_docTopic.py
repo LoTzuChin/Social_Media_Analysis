@@ -1,4 +1,4 @@
-# æ³¨æ„ï¼šè‹¥åœ¨æœ¬æ©ŸåŸ·è¡Œé‡åˆ° PowerShell åŸ·è¡ŒåŸå‰‡é™åˆ¶ï¼Œå¯è‡ªè¡Œèª¿æ•´æ”¿ç­–æˆ–æ”¹ç”¨é›²ç«¯ç’°å¢ƒã€‚
+# À³¸Ó¬OÀô¹Ò°İÃD¡AµLªk¦b¦aºİ¹B¦æ¡A©Ò¥H§ï¥Î Colab
 
 import os
 import pandas as pd
@@ -6,17 +6,13 @@ import numpy as np
 from bertopic import BERTopic
 from typing import Optional, List, Tuple, Union
 
-
 def load_model(model_path: str) -> BERTopic:
-    """è¼‰å…¥æŒ‡å®šè·¯å¾‘çš„ BERTopic æ¨¡å‹ï¼Œè‹¥è·¯å¾‘ä¸å­˜åœ¨å‰‡æ‹‹å‡ºéŒ¯èª¤ã€‚"""
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model not found: {model_path}")
     print(f"[INFO] Loading BERTopic model from: {model_path}")
     return BERTopic.load(model_path)
 
-
 def load_texts(csv_path: str, text_col: str) -> pd.DataFrame:
-    """è®€å–è¼¸å…¥ CSV ä¸¦å°‡ç›®æ¨™æ¬„ä½è½‰ç‚ºå­—ä¸²ï¼Œç¼ºæ¼å€¼ä»¥ç©ºå­—ä¸²è£œè¶³ã€‚"""
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"CSV not found: {csv_path}")
     print(f"[INFO] Reading CSV: {csv_path}")
@@ -26,24 +22,26 @@ def load_texts(csv_path: str, text_col: str) -> pd.DataFrame:
     df[text_col] = df[text_col].fillna("").astype(str)
     return df
 
-
 def get_topic_ids(topic_model: BERTopic) -> List[int]:
-    """å–å¾—æ‰€æœ‰ä¸»é¡Œç·¨è™Ÿï¼Œæ’é™¤ BERTopic ä»¥ -1 æ¨™ç¤ºçš„é›¢ç¾¤æ–‡ä»¶ã€‚"""
     info = topic_model.get_topic_info()
+    # ±Æ°£ -1 (outlier)¡A«O«ù­ì¶¶§Ç
     return [int(t) for t in info["Topic"].tolist() if int(t) != -1]
 
-
 def coerce_to_matrix(probabilities: Union[np.ndarray, List]) -> Optional[np.ndarray]:
-    """å°‡ BERTopic å‚³å›çš„ probabilities æ•´ç†æˆäºŒç¶­çŸ©é™£ï¼Œç„¡æ³•åˆ¤å®šæ™‚å›å‚³ Noneã€‚"""
+    """
+    ±N BERTopic ¦^¶Çªº probabilities Âà¦¨ 2D ¯x°}¡C
+    ­Y°»´ú¬°¤@ºû¡umembership strength¡v¡]¨C½g¤@­Ó¼Æ¡^¡A¦^¶Ç None Åı©I¥sºİ¨«ªñ¦ü¤À§G¡C
+    """
     if probabilities is None:
         return None
     if isinstance(probabilities, list):
         try:
+            # ¥i¯à¬O list of 1D arrays -> ¹Á¸Õ°ïÅ|
             arrs = [np.asarray(p).ravel() for p in probabilities]
             if len(arrs) == 0:
                 return None
             if arrs[0].size == 1:
-                # æ¯ç­†åƒ…æœ‰å–®ä¸€åˆ†æ•¸ä»£è¡¨éš¸å±¬å¼·åº¦ï¼Œç„¡æ³•å½¢æˆå®Œæ•´ä¸»é¡Œåˆ†å¸ƒ
+                # ¨C½g¥u¦³¤@­Ó¼Æ¡]membership strength¡^¡A¤£¬O¥DÃD¤À§G
                 return None
             return np.vstack(arrs)
         except Exception:
@@ -52,9 +50,10 @@ def coerce_to_matrix(probabilities: Union[np.ndarray, List]) -> Optional[np.ndar
         if probabilities.ndim == 2:
             return probabilities
         if probabilities.ndim == 1:
-            # ä¸€ç¶­å‘é‡é€šå¸¸åªæœ‰å–®ä¸€å¼·åº¦åˆ†æ•¸ï¼Œç›´æ¥è¦–ç‚ºç„¡æ³•ä½¿ç”¨çš„çµæœ
+            # ¤@ºû¡G­Y¬O¯BÂI¡]¨C½g¤@­Ó·§²v¡^¡Aµø¬° membership strength
             if np.issubdtype(probabilities.dtype, np.floating) or np.issubdtype(probabilities.dtype, np.integer):
                 return None
+            # ª«¥ó°}¦C¡G¹Á¸Õ°ïÅ|
             try:
                 arrs = [np.asarray(p).ravel() for p in probabilities]
                 if len(arrs) and arrs[0].size > 1:
@@ -63,22 +62,27 @@ def coerce_to_matrix(probabilities: Union[np.ndarray, List]) -> Optional[np.ndar
                 return None
     return None
 
-
 def get_topic_distribution(topic_model: BERTopic, docs: List[str]) -> Tuple[np.ndarray, List[int], str]:
-    """å›å‚³ä¸»é¡Œåˆ†å¸ƒçŸ©é™£ã€ä¸»é¡Œç·¨è™Ÿèˆ‡æ‰€ä½¿ç”¨çš„æ¨è«–æ¨¡å¼ã€‚"""
+    """
+    ¦^¶Ç (topic_matrix[N,K], topic_ids[K], mode)
+    mode: 'transform' ©Î 'approx'
+    """
     topics, probs = topic_model.transform(docs)
     mat = coerce_to_matrix(probs)
     topic_ids = get_topic_ids(topic_model)
 
     if mat is not None:
+        # transform ¤wµ¹¥X N¡ÑK
         if mat.shape[1] != len(topic_ids):
-            # è‹¥æ¬„æ•¸ä¸ä¸€è‡´ï¼Œæé†’ä½¿ç”¨è€…ä¸»é¡Œè¢«é‡æ–°ç·¨è™Ÿçš„å¯èƒ½æ€§
+            # Äæ¼Æ¹ï¤£¤W -> °h¦^³s¸¹
             print(f"[WARN] transform matrix topics({mat.shape[1]}) != topic_ids({len(topic_ids)}).")
         return mat, topic_ids, "transform"
 
-    # transform æœªæä¾›å®Œæ•´çŸ©é™£æ™‚æ”¹æ¡ approximate_distribution å–å¾—ä¼°è¨ˆå€¼
+    # ¨«ªñ¦ü¡G¨C½g¤å¥ó¥DÃD¤À§G
     print("[INFO] Falling back to approximate_distribution(...) to get topic proportions.")
+    # ¨Ì©x¤è«ØÄ³¡A¥i½Õ window/stride¡F¹w³]³o²Õ¦b¬q¸¨¯Å¤À³Î¤W®ÄªGÃ­°·
     res = topic_model.approximate_distribution(docs, window=8, stride=4)
+    # ­İ®e¤£¦Pª©¥»¦^¶Ç«¬ºA
     topic_distr = res[0] if isinstance(res, tuple) else res
     if not isinstance(topic_distr, np.ndarray) or topic_distr.ndim != 2:
         raise RuntimeError("approximate_distribution did not return a 2D matrix; cannot build topic proportions.")
@@ -87,15 +91,11 @@ def get_topic_distribution(topic_model: BERTopic, docs: List[str]) -> Tuple[np.n
         topic_ids = list(range(topic_distr.shape[1]))
     return topic_distr, topic_ids, "approx"
 
-
 def build_prob_df(prob_matrix: np.ndarray, topic_ids: List[int]) -> pd.DataFrame:
-    """æ ¹æ“šä¸»é¡Œç·¨è™Ÿå»ºç«‹å°æ‡‰çš„ä¸»é¡Œæ©Ÿç‡æ¬„ä½ã€‚"""
     cols = [f"topic_{tid}_prob" for tid in topic_ids]
     return pd.DataFrame(prob_matrix, columns=cols)
 
-
 def add_dominant(prob_df: pd.DataFrame) -> pd.DataFrame:
-    """æ‰¾å‡ºæ¯ç¯‡æ–‡ä»¶æ©Ÿç‡æœ€é«˜çš„ä¸»é¡Œèˆ‡å°æ‡‰æ©Ÿç‡ã€‚"""
     probs = prob_df.values
     argmax_idx = np.argmax(probs, axis=1)
     max_probs = probs[np.arange(probs.shape[0]), argmax_idx]
@@ -104,9 +104,7 @@ def add_dominant(prob_df: pd.DataFrame) -> pd.DataFrame:
     dom_topic_ids = [c.replace("topic_", "").replace("_prob", "") for c in dom_topic_cols]
     return pd.DataFrame({"dominant_topic": dom_topic_ids, "dominant_prob": max_probs})
 
-
 def main(model_path: str, input_csv: str, text_col: str, output_csv: str):
-    """æ•´åˆæµç¨‹ï¼šè¼‰å…¥æ¨¡å‹ã€æ¨è«–ä¸»é¡Œåˆ†å¸ƒä¸¦è¼¸å‡ºçµæœæª”ã€‚"""
     topic_model = load_model(model_path)
     df = load_texts(input_csv, text_col)
 
@@ -118,7 +116,6 @@ def main(model_path: str, input_csv: str, text_col: str, output_csv: str):
     prob_df = build_prob_df(topic_matrix, topic_ids)
     dom_df = add_dominant(prob_df)
 
-    # å°‡åŸå§‹è³‡æ–™èˆ‡ä¸»é¡Œåˆ†å¸ƒã€ä¸»é¡Œæ¨™ç±¤åˆä½µè¼¸å‡º
     out_df = pd.concat([df.reset_index(drop=True),
                         prob_df.reset_index(drop=True),
                         dom_df.reset_index(drop=True)], axis=1)
@@ -127,12 +124,12 @@ def main(model_path: str, input_csv: str, text_col: str, output_csv: str):
     out_df.to_csv(output_csv, index=False, encoding="utf-8-sig")
     print(f"[INFO] Saved topic proportions to: {os.path.abspath(output_csv)}")
 
-
 if __name__ == "__main__":
-    # ==== ä¾æ“š Colab é è¨­è·¯å¾‘å¯«æ­»ï¼Œå¯ä¾éœ€è¦è‡ªè¡Œä¿®æ”¹ ====
+    # ==== ¨Ì§Aªº Colab ¸ô®|¼g¦º ====
     MODEL_PATH  = "/content/bertopic_finetuned_model"
     INPUT_CSV   = "/content/cleaned_texts.csv"
     TEXT_COLUMN = "cleaned_text"
     OUTPUT_CSV  = "topic_proportions.csv"
 
     main(MODEL_PATH, INPUT_CSV, TEXT_COLUMN, OUTPUT_CSV)
+
