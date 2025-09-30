@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+secrets.json
+
+# Outputs
+*.csv
+
+# Dir
+image
+reference
+images_remaining
+
+# model
+bertopic_finetuned_model
