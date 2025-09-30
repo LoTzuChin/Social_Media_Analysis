@@ -27,6 +27,9 @@ secrets.json
 image
 reference
 images_remaining
+prepocessing_data
+image_descriptions
+result
 
 # model
 bertopic_finetuned_model
