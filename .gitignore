@@ -22,14 +22,13 @@ secrets.json
 
 # Outputs
 *.csv
+*.docx
 
 # Dir
-image
 reference
-images_remaining
+original_data
 prepocessing_data
-image_descriptions
-result
+output_bertopic
+output_lda
 
 # model
-bertopic_finetuned_model
