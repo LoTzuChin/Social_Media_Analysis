@@ -23,6 +23,9 @@ secrets.json
 # Outputs
 *.csv
 *.docx
+*.xlsx
+*.json
+*.txt
 
 # Dir
 reference
@@ -30,5 +33,9 @@ original_data
 prepocessing_data
 output_bertopic
 output_lda
+predict_model/dnn_report_dir
+predict_model/rf_report_dir
+predict_model/xgb_report_dir
+predict_model/svm_report_dir
 
 # model
